@@ -1,0 +1,35 @@
+# Виртуальное окружение
+venv/
+env/
+ENV/
+
+# Файлы с секретами
+.env
+*.env
+
+# Кеши Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Базы данных
+*.db
+*.sqlite3
+
+# Редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Alembic versions (но сами версии сохраняем, только кеши)
+alembic/versions/__pycache__/
+
+# Логи
+logs/
+*.log
