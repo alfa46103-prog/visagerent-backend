@@ -973,7 +973,7 @@ class PointWorkerRead(BaseModel):
     point_id: int
     worker_id: int
     is_primary: bool
-    created_at: datetime
+    assigned_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

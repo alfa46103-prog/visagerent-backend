@@ -157,23 +157,18 @@ async def create_magic_token(
 async def verify_magic_token(
     db: AsyncSession,
     token_str: str,
-) -> str:
+) -> dict:
     """
-    Проверяет magic-token и возвращает JWT.
+    Проверяет magic-token и возвращает данные для frontend.
 
-    Проверки:
-      1. Токен существует
-      2. Не использован
-      3. Не просрочен
-
-    JWT будет содержать:
-      - sub: ID пользователя (строка)
-      - type: "global" или "worker"
-
-    Потом в зависимости от type:
-      - get_current_user  ищет в global_users  (для бота)
-      - get_current_worker ищет в workers       (для админки)
+    Возвращает:
+        access_token
+        token_type
+        user_type
+        redirect_to
+        user
     """
+
     stmt = select(MagicToken).where(MagicToken.token == token_str)
     result = await db.execute(stmt)
     db_token = result.scalar_one_or_none()
@@ -187,18 +182,37 @@ async def verify_magic_token(
     if db_token.is_expired:
         raise HTTPException(status_code=400, detail="Token expired")
 
-    # Помечаем как использованный
+    # помечаем токен использованным
     db_token.used_at = datetime.now(timezone.utc)
     await db.commit()
 
-    # Создаём JWT с типом пользователя
+    user_type = db_token.user_type
+
+    # создаём JWT
     access_token = create_access_token(
         data={
             "sub": str(db_token.user_id),
-            "type": db_token.user_type,  # "global" или "worker"
+            "type": user_type,
         }
     )
-    return access_token
+
+    # определяем redirect
+    if user_type == "worker":
+        redirect_to = "/app/dashboard"
+    elif user_type == "super_admin":
+        redirect_to = "/super-admin/dashboard"
+    else:
+        redirect_to = None
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_type": user_type,
+        "redirect_to": redirect_to,
+        "user": {
+            "id": db_token.user_id
+        }
+    }
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
